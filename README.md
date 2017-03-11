@@ -8,6 +8,12 @@ Add references :
 - *Outils ->Gérer les packages Nuget -> Gérer les packages Nuget pour la solution* 
   PM > Install-Package CassandraCSharpDriver
   
+Go to your Cassandra software and :
+Create your keyspace
+Create your type
+Create your table
+
+Example :
 ```CQL
 CREATE KEYSPACE IF NOT EXISTS reuters  WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor': 3 };
 CREATE TYPE Texte(dateline VARCHAR, title VARCHAR, body VARCHAR);
