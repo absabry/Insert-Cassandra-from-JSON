@@ -13,49 +13,80 @@ namespace insert_data
     {
         static void Main(string[] args)
         {
-            ReadJson();
-            //var abc = "hello the're";
-            //abc = abc.Replace("'", "''");
-            //Console.WriteLine(abc);
-            Console.ReadKey();
-
+            InsertCassandra();
+            Console.ReadKey(); 
         }
-        static void ReadJson()
+        static void InsertCassandra()
         {
-            int count = 0;
-            List<Reuters_Item> objects = new List<Reuters_Item>();
-            String[] lines = File.ReadAllLines("reuters.json");
-            foreach (string line in lines)
+            int begin = 0;
+            int k = 1; 
+            Reuters_Item item;
+            string[] lines= File.ReadAllLines(@"C:\Users\Abdel\Desktop\ESILV_S8\nosql\database\reuters.json"); 
+            for (int i=begin;i<= 5000*k;i++)
             {
-                count++;
-                if (count % 2 == 0)
+                if (i % 2 != 0)
                 {
-                    Reuters_Item items = JsonConvert.DeserializeObject<Reuters_Item>(line);
-                    Console.WriteLine();
-
-                     Console.WriteLine("item number" + count);
-                     InsertValue(items);
-                     //Console.WriteLine(items);
+                    Console.WriteLine("item number" + i);
+                    try
+                    {
+                        item = JsonConvert.DeserializeObject<Reuters_Item>(lines[i]);
+                        InsertValue(item);
+                    }
+                    catch  { }
+                    item = null; 
                 }
             }
         }
 
         static void InsertValue(Reuters_Item item)
         {
+
             string keyspace = "reuters";
             string localhost = "127.0.0.1";
             Cluster cluster = Cluster.Builder().AddContactPoint(localhost).Build();
             ISession session = cluster.Connect(keyspace);
-            if(item.text.body != null) item.text.body=(item.text.body).Replace("'", "''");
-            if (item.text.title != null) item.text.title = (item.text.title).Replace("'", "''");
-            if (item.text.dateline != null) item.text.dateline = (item.text.dateline).Replace("'", "''");
+            if (item.text.body != null) item.text.body = cleanText(item.text.body);
+            if (item.text.title != null) item.text.title = cleanText(item.text.title);
+            if (item.text.dateline != null) item.text.dateline = cleanText(item.text.dateline);
+            if (item.date != null) item.date = cleanDate(item.date); 
 
-            Console.WriteLine(item.text.body);
-            Console.WriteLine("********************requete *************************");
-            //Console.WriteLine("INSERT INTO Article(date, places, companies, topics, exchanges, id, orgs, textes, people)  VALUES('26-FEB-1987 15:03:27.51', 'usa', '', '', '', 2, '', { dateline: 'HOUSTON, Feb 26 -', title: 'TEXAS COMMERCE BANCSHARES TCB FILES PLAN', body: 'Moody''s Investors Service Inc said it lowered the debt and preferred stock ratings of USX Corp and its units. About seven billion dlrs of securities is affected.     Moody''s said Marathon Oil Co''s recent establishment of up to one billion dlrs in production payment facilities on its prolific Yates Field has significant negative implications for USX''s unsecured creditors.     The company appears to have positioned its steel segment for a return to profit by late 1987, Moody''s added.     Ratings lowered include those on USX''s senior debt to BA-1 from BAA-3.  Reuter' }, '');");
-            session.Execute("INSERT INTO Article (date, places, companies, topics, exchanges, id, orgs, textes, people)" 
-                           +"VALUES ('"+ item.date +"','"+item.places+ "','" + item.companies+ "', '" + item.topics+ "', '" + item.exchanges+ "', " + item._id+ ", '" + item.orgs
-                           + "', {dateline:'" + item.text.dateline + "', title:'"+item.text.title+ "', body:'"+item.text.body+ "' }, '" + item.people+ "');");
+            session.Execute("INSERT INTO Article (date, places, companies, topics, exchanges, id, orgs, textes, people)"
+                           + "VALUES ('" + item.date + "','" + item.places + "','" + item.companies + "', '" + item.topics + "', '" + item.exchanges + "', " + item._id + ", '" + item.orgs
+                           + "', {dateline:'" + item.text.dateline + "', title:'" + item.text.title + "', body:'" + item.text.body + "' }, '" + item.people + "');");
+        }
+
+        static string cleanText(string text)
+        {
+            return text.Replace("'", "''");
+        }
+        static string cleanDate(string text)
+        {
+            Dictionary<int, string> convertion = CreateDateDictio();
+            foreach (KeyValuePair<int, string> entry in convertion)
+            {
+                if (text.Contains("-" + entry.Value + "-"))
+                {
+                    text = text.Replace(entry.Value, entry.Key.ToString()); 
+                }
+            }
+            return Convert.ToDateTime(text).ToString("yyyy-MM-dd H:mm:ss.FFF");
+        }
+        static Dictionary<int,string> CreateDateDictio()
+        {
+            Dictionary<int, String> convert = new Dictionary<int, string>();
+            convert.Add(1, "JAN"); 
+            convert.Add(2, "FEB"); 
+            convert.Add(3, "MAR"); 
+            convert.Add(4, "APR"); 
+            convert.Add(5, "MAY"); 
+            convert.Add(6, "JUN"); 
+            convert.Add(7, "JUL"); 
+            convert.Add(8, "AUG"); 
+            convert.Add(9, "SEP"); 
+            convert.Add(10, "OCT"); 
+            convert.Add(11, "NOV"); 
+            convert.Add(12, "DEC");
+            return convert; 
         }
     }
 }
